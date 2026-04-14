@@ -199,11 +199,12 @@ app.get("/search", async (req, res) => {
     const { data, node } = await querySolr({
   // Use a fielded query so Solr doesn't fall back to a default field that can ignore your intent.
   // Also, don't use wildcard-leading queries (`*term*`) since they're slow; rely on Solr analysis.
-  q:    q ? `title:${q}` : "*:*",
+  q:    q ? `title:(${q}) OR title_type:(${q}) OR genres:(${q})` : "*:*",
+  "q.op": q ? "AND" : undefined,
   // IMPORTANT: if there are no filters, omit fq completely.
   fq:   filterQuery.length > 0 ? filterQuery : undefined,
       sort: "rating desc",
-      rows: 10,
+      rows: 20,
       wt:   "json",
     });
 
@@ -227,7 +228,7 @@ app.get("/top", async (req, res) => {
     const { data, node } = await querySolr({
       q:    "*:*",
       sort: "rating desc",
-      rows: 10,
+      rows: 20,
       wt:   "json",
     });
 
