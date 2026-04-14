@@ -4,12 +4,14 @@ import { Loader2, SearchX } from "lucide-react";
 import { MovieCard } from "./movie-card";
 
 interface Movie {
-  id: number;
-  title: string;
+  id: string;
+  title: string[];
   rating: number;
-  year: number;
-  genre: string;
-  poster?: string;
+  release_year: number;
+  genres: string[];
+  title_type: string;
+  votes: number;
+  runtime: number;
 }
 
 interface MovieGridProps {

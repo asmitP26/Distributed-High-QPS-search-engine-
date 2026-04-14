@@ -8,12 +8,14 @@ import { TopMovies } from "@/components/top-movies";
 import { MovieGrid } from "@/components/movie-grid";
 
 interface Movie {
-  id: number;
-  title: string;
+  id: string;
+  title: string[];
   rating: number;
-  year: number;
-  genre: string;
-  poster?: string;
+  release_year: number;
+  genres: string[];
+  title_type: string;
+  votes: number;
+  runtime: number;
 }
 
 export default function Home() {
@@ -32,7 +34,7 @@ export default function Home() {
 
     try {
       const params = new URLSearchParams();
-      if (query) params.append("q", query);
+      if (query.trim()) params.append("q", query.trim());
       if (genre !== "All Genres") params.append("genre", genre);
       if (minRating > 1) params.append("minRating", minRating.toString());
       if (year !== "all") params.append("year", year);
@@ -41,40 +43,46 @@ export default function Home() {
       const res = await fetch(`http://localhost:5000/search?${params.toString()}`);
       if (!res.ok) throw new Error("Search failed");
       const data = await res.json();
-      setMovies(data);
+      
+      const moviesArray = Array.isArray(data) ? data : data.results || [];
+      setMovies(moviesArray);
     } catch (error) {
       console.error("Search error:", error);
       // Demo data for preview
       const demoMovies = [
-        { id: 1, title: "The Shawshank Redemption", rating: 9.3, year: 1994, genre: "Drama" },
-        { id: 2, title: "The Dark Knight", rating: 9.0, year: 2008, genre: "Action" },
-        { id: 3, title: "Inception", rating: 8.8, year: 2010, genre: "Sci-Fi" },
-        { id: 4, title: "Pulp Fiction", rating: 8.9, year: 1994, genre: "Crime" },
-        { id: 5, title: "Forrest Gump", rating: 8.8, year: 1994, genre: "Drama" },
-        { id: 6, title: "The Matrix", rating: 8.7, year: 1999, genre: "Sci-Fi" },
-        { id: 7, title: "Interstellar", rating: 8.6, year: 2014, genre: "Sci-Fi" },
-        { id: 8, title: "Parasite", rating: 8.5, year: 2019, genre: "Thriller" },
-        { id: 9, title: "Fight Club", rating: 8.8, year: 1999, genre: "Drama" },
-        { id: 10, title: "The Godfather", rating: 9.2, year: 1972, genre: "Crime" },
-        { id: 11, title: "Avengers: Endgame", rating: 8.4, year: 2019, genre: "Action" },
-        { id: 12, title: "Joker", rating: 8.4, year: 2019, genre: "Drama" },
+        { id: "1", title: ["The Shawshank Redemption"], rating: 9.3, release_year: 1994, genres: ["Drama"], title_type: "movie", votes: 2000000, runtime: 142 },
+        { id: "2", title: ["The Dark Knight"], rating: 9.0, release_year: 2008, genres: ["Action"], title_type: "movie", votes: 2500000, runtime: 152 },
+        { id: "3", title: ["Inception"], rating: 8.8, release_year: 2010, genres: ["Sci-Fi"], title_type: "movie", votes: 2100000, runtime: 148 },
+        { id: "4", title: ["Pulp Fiction"], rating: 8.9, release_year: 1994, genres: ["Crime"], title_type: "movie", votes: 1900000, runtime: 154 },
+        { id: "5", title: ["Forrest Gump"], rating: 8.8, release_year: 1994, genres: ["Drama"], title_type: "movie", votes: 1800000, runtime: 142 },
+        { id: "6", title: ["The Matrix"], rating: 8.7, release_year: 1999, genres: ["Sci-Fi"], title_type: "movie", votes: 1700000, runtime: 136 },
+        { id: "7", title: ["Interstellar"], rating: 8.6, release_year: 2014, genres: ["Sci-Fi"], title_type: "movie", votes: 1600000, runtime: 169 },
+        { id: "8", title: ["Parasite"], rating: 8.5, release_year: 2019, genres: ["Thriller"], title_type: "movie", votes: 700000, runtime: 132 },
+        { id: "9", title: ["Fight Club"], rating: 8.8, release_year: 1999, genres: ["Drama"], title_type: "movie", votes: 1900000, runtime: 139 },
+        { id: "10", title: ["The Godfather"], rating: 9.2, release_year: 1972, genres: ["Crime"], title_type: "movie", votes: 1700000, runtime: 175 },
+        { id: "11", title: ["Avengers: Endgame"], rating: 8.4, release_year: 2019, genres: ["Action"], title_type: "movie", votes: 1000000, runtime: 181 },
+        { id: "12", title: ["Joker"], rating: 8.4, release_year: 2019, genres: ["Drama"], title_type: "movie", votes: 1200000, runtime: 122 },
       ];
 
       // Filter demo movies based on criteria
       let filtered = demoMovies;
-      if (query) {
+      const qLower = query.trim().toLowerCase();
+      if (qLower) {
         filtered = filtered.filter((m) =>
-          m.title.toLowerCase().includes(query.toLowerCase())
+          m.title[0].toLowerCase().includes(qLower)
         );
       }
       if (genre !== "All Genres") {
-        filtered = filtered.filter((m) => m.genre === genre);
+        filtered = filtered.filter((m) => m.genres.includes(genre));
       }
       if (minRating > 1) {
-        filtered = filtered.filter((m) => m.rating >= minRating);
+        filtered = filtered.filter((m) => m.rating && m.rating >= minRating);
       }
       if (year !== "all") {
-        filtered = filtered.filter((m) => m.year.toString() === year);
+        filtered = filtered.filter((m) => m.release_year && m.release_year.toString() === year);
+      }
+      if (contentType !== "All Types") {
+         filtered = filtered.filter((m) => m.title_type && m.title_type.toLowerCase() === contentType.toLowerCase().replace(" ", ""));
       }
       setMovies(filtered);
     } finally {
@@ -82,15 +90,32 @@ export default function Home() {
     }
   }, [query, genre, minRating, year, contentType]);
 
-  // Auto-search when filters change (with debounce)
+  const handleQueryChange = (val: string) => {
+    setQuery(val);
+    const trimmedVal = val.trim();
+    // Only search at trailing space OR length is a multiple of 4
+    if (
+      (val.endsWith(" ") && trimmedVal.length > 0) ||
+      (trimmedVal.length > 0 && trimmedVal.length % 4 === 0)
+    ) {
+      searchMovies();
+    } else if (trimmedVal.length === 0) {
+      // Re-trigger search when cleared if there's other filters
+      if (hasSearched) {
+        searchMovies();
+      }
+    }
+  };
+
+  // Search when filters change
   useEffect(() => {
     if (hasSearched) {
       const timer = setTimeout(() => {
         searchMovies();
-      }, 300);
+      }, 400); // Increased debounce to prevent rapid firing while adjusting filters
       return () => clearTimeout(timer);
     }
-  }, [genre, minRating, year, contentType, hasSearched, searchMovies]);
+  }, [genre, minRating, year, contentType]); // Removed `searchMovies` from dependencies to avoid loop, kept only filter values.
 
   return (
     <main className="relative min-h-screen">
@@ -114,7 +139,7 @@ export default function Home() {
         <div className="mb-8">
           <SearchBar
             query={query}
-            onQueryChange={setQuery}
+            onQueryChange={handleQueryChange}
             onSearch={searchMovies}
           />
         </div>
