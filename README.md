@@ -216,7 +216,7 @@ siege -c 200 -t 60S -i -f urls.txt
 
 ---
 
-## 🚀 Summary
+## Summary
 
 This system demonstrates a **fully distributed, fault-tolerant, high-throughput data pipeline** capable of:
 
