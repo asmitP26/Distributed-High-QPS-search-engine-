@@ -65,7 +65,7 @@ export default function SimulationPage() {
         const newPoint: DataPoint = {
           time: parsed.qps,
           timestamp: parsed.timestamp,
-          displayTime: new Date(parsed.timestamp).toLocaleTimeString([], { hour12: false, second: '2-digit', fractionalSecondDigits: 1 }),
+          displayTime: new Date(parsed.timestamp).toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' }),
         };
 
         setData((prevData) => {
@@ -79,7 +79,7 @@ export default function SimulationPage() {
         const newPoint: DataPoint = {
           time: timeValue,
           timestamp: parsed.timestamp,
-          displayTime: new Date(parsed.timestamp).toLocaleTimeString([], { hour12: false, second: '2-digit', fractionalSecondDigits: 1 }),
+          displayTime: new Date(parsed.timestamp).toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' }),
         };
 
         // For individual metrics, we just want to log them or handle differently, but here we don't spam the graph 
@@ -138,8 +138,9 @@ export default function SimulationPage() {
   }, []);
 
   // Calculate moving average
-  const avgQPS = data.length > 0 ? (data.reduce((acc, curr) => acc + curr.time, 0) / data.length).toFixed(1) : "0.0";
-
+  const last5SecData = data.filter(d => (Date.now() - d.timestamp) <= 5000);
+  const avgQPS = last5SecData.length > 0 ? (last5SecData.reduce((acc, curr) => acc + curr.time, 0) / last5SecData.length).toFixed(1) : "0.0";
+  
   return (
     <div className="relative min-h-screen bg-background text-foreground p-8 overflow-hidden">
       <CinematicBackground />
@@ -176,7 +177,7 @@ export default function SimulationPage() {
             </p>
           </div>
           <div className="p-6 rounded-2xl border border-white/5 bg-card/60 backdrop-blur-xl">
-            <p className="text-sm text-muted-foreground mb-1">Live Avg QPS (last 60s)</p>
+            <p className="text-sm text-muted-foreground mb-1">Live Avg QPS (last 5s)</p>
             <p className="text-3xl font-bold tracking-tight text-primary">{avgQPS} <span className="text-lg text-muted-foreground font-normal">q/s</span></p>
           </div>
           <div className="p-6 rounded-2xl border border-white/5 bg-card/60 backdrop-blur-xl">
@@ -185,8 +186,8 @@ export default function SimulationPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <div className="lg:col-span-2 p-6 rounded-3xl border border-white/5 bg-card/60 backdrop-blur-xl relative shadow-2xl overflow-hidden h-125">
+        <div className="grid grid-cols-1 mb-8">
+          <div className="p-6 rounded-3xl border border-white/5 bg-card/60 backdrop-blur-xl relative shadow-2xl overflow-hidden h-125">
             {!isSimulating && data.length === 0 && (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground/80 z-20 bg-background/90 backdrop-blur-2xl rounded-3xl">
                 <Activity className="w-16 h-16 text-muted-foreground/30 mb-4" />
@@ -197,57 +198,26 @@ export default function SimulationPage() {
             <div className="w-full h-full relative z-10">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted-foreground) / 0.2)" vertical={false} />
-                  <XAxis dataKey="displayTime" stroke="hsl(var(--muted-foreground))" fontSize={12} tickMargin={10} minTickGap={30} />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickFormatter={(val) => `${val}`} domain={['auto', 'auto']} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.65 0 0 / 0.2)" vertical={false} />
+                  <XAxis dataKey="displayTime" stroke="oklch(0.65 0 0)" fontSize={12} tickMargin={10} minTickGap={30} />
+                  <YAxis stroke="oklch(0.65 0 0)" fontSize={12} tickFormatter={(val) => `${val}`} domain={['auto', 'auto']} />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '12px', color: 'hsl(var(--foreground))' }}
-                    itemStyle={{ color: 'hsl(var(--primary))' }}
+                    contentStyle={{ backgroundColor: 'oklch(0.15 0.01 270 / 0.9)', borderColor: 'oklch(0.2 0 0)', borderRadius: '12px', color: 'oklch(0.98 0 0)' }}
+                    itemStyle={{ color: 'oklch(0.65 0.25 25)' }}
                     formatter={(value: number) => [`${value} qps`, 'QPS']}
                   />
                   <Line 
                     type="monotone" 
                     dataKey="time" 
-                    stroke="hsl(var(--primary))" 
+                    stroke="oklch(0.65 0.25 25)" 
                     strokeWidth={3} 
-                    dot={{ r: 4, fill: "hsl(var(--primary))" }}
-                    activeDot={{ r: 6, fill: "hsl(var(--primary))", stroke: "hsl(var(--background))", strokeWidth: 2 }}
+                    dot={{ r: 4, fill: "oklch(0.65 0.25 25)" }}
+                    activeDot={{ r: 6, fill: "oklch(0.65 0.25 25)", stroke: "oklch(0.05 0.01 270)", strokeWidth: 2 }}
                     animationDuration={300}
                     isAnimationActive={false}
                   />
                 </LineChart>
               </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="lg:col-span-1 p-6 rounded-3xl border border-white/5 bg-card/60 backdrop-blur-xl relative shadow-2xl h-125 flex flex-col">
-            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-              <Activity className="w-6 h-6 text-primary" />
-              Terminal Output
-              {logs.length > 0 && (
-                <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full border border-primary/30">
-                  Live
-                </span>
-              )}
-            </h2>
-            <div className="flex-1 bg-black/50 border border-white/10 rounded-xl p-4 overflow-y-auto font-mono text-xs md:text-sm text-gray-300 relative custom-scrollbar space-y-1" ref={logContainerRef}>
-              {!isSimulating && logs.length === 0 && (
-                <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/50">
-                  <p>Awaiting simulation logs...</p>
-                </div>
-              )}
-              {logs.map((log) => {
-                // simple colorization
-                let colorClass = "text-gray-300";
-                if (log.raw.includes("HTTP/1.1 200")) colorClass = "text-green-400";
-                else if (log.raw.includes("HTTP/1.1 500") || log.raw.includes("error") || log.raw.includes("WARN")) colorClass = "text-red-400";
-                
-                return (
-                  <div key={log.id} className={`${colorClass} whitespace-pre-wrap break-all`}>
-                    {log.raw}
-                  </div>
-                );
-              })}
             </div>
           </div>
         </div>

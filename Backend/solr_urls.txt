@@ -1,6 +1,5 @@
 http://solr2:8983/solr/imdb/select?q=genres:Adult
-http://solr:8983/solr/imdb/select?q=genres:Holi
-http://solr2:8983/solr/imdb/select?q=genres:Idiot
-http://solr:8983/solr/imdb/select?q=genres:Avengers
-
+http://solr2:8983/solr/imdb/select?q=genres:Adult
+http://solr2:8983/solr/imdb/select?q=genres:Adult
+http://solr2:8983/solr/imdb/select?q=genres:Adult
 
