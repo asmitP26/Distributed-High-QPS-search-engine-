@@ -156,3 +156,30 @@
 🚀 Siege spawned, PID: 117738
 📄 URLs file: /home/shresth/Desktop/Distributed-High-QPS-search-engine-/Backend/solr_urls.txt
 ✅ Node RECOVERED: solr1 (w1) (100.100.186.77)
+🚀 Siege spawned, PID: 118437
+📄 URLs file: /home/shresth/Desktop/Distributed-High-QPS-search-engine-/Backend/solr_urls.txt
+🔀 [Attempt 1] Routing to: solr1 (w1) (100.100.186.77) | active: 1
+🧾 Solr request: http://100.100.186.77:8983/solr/imdb/select?q=*%3A*&sort=rating+desc&rows=20&wt=json
+⚠️  Request failed on solr1 (w1): timeout of 8000ms exceeded
+🔀 [Attempt 2] Routing to: solr (main) (100.91.5.87) | active: 1
+🧾 Solr request: http://100.91.5.87:8983/solr/imdb/select?q=*%3A*&sort=rating+desc&rows=20&wt=json
+🔀 [Attempt 1] Routing to: solr1 (w1) (100.100.186.77) | active: 1
+🧾 Solr request: http://100.100.186.77:8983/solr/imdb/select?q=*%3A*&sort=rating+desc&rows=20&wt=json
+⚠️  Request failed on solr1 (w1): timeout of 8000ms exceeded
+🔀 [Attempt 2] Routing to: solr (main) (100.91.5.87) | active: 1
+🧾 Solr request: http://100.91.5.87:8983/solr/imdb/select?q=*%3A*&sort=rating+desc&rows=20&wt=json
+🚀 Siege spawned, PID: 118586
+📄 URLs file: /home/shresth/Desktop/Distributed-High-QPS-search-engine-/Backend/solr_urls.txt
+❌ Node DEAD: solr1 (w1) (100.100.186.77) — removed from rotation
+🔀 [Attempt 1] Routing to: solr2 (w2) (100.65.255.76) | active: 1
+🧾 Solr request: http://100.65.255.76:8983/solr/imdb/select?q=*%3A*&sort=rating+desc&rows=20&wt=json
+🔀 [Attempt 1] Routing to: solr (main) (100.91.5.87) | active: 1
+🧾 Solr request: http://100.91.5.87:8983/solr/imdb/select?q=*%3A*&sort=rating+desc&rows=20&wt=json
+🚀 Siege spawned, PID: 119102
+📄 URLs file: /home/shresth/Desktop/Distributed-High-QPS-search-engine-/Backend/solr_urls.txt
+🚀 Siege spawned, PID: 119395
+📄 URLs file: /home/shresth/Desktop/Distributed-High-QPS-search-engine-/Backend/solr_urls.txt
+🔀 [Attempt 1] Routing to: solr2 (w2) (100.65.255.76) | active: 1
+🧾 Solr request: http://100.65.255.76:8983/solr/imdb/select?q=*%3A*&sort=rating+desc&rows=20&wt=json
+🔀 [Attempt 1] Routing to: solr (main) (100.91.5.87) | active: 1
+🧾 Solr request: http://100.91.5.87:8983/solr/imdb/select?q=*%3A*&sort=rating+desc&rows=20&wt=json

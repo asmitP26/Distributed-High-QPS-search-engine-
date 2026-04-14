@@ -123,10 +123,10 @@ export default function Home() {
       <CinematicBackground />
       
       <div className="relative z-10 container mx-auto px-4 py-8">
-        <div className="absolute top-4 right-4 z-50">
+        <div className="absolute top-4 -right-4 md:-right-8 z-50 flex gap-4">
           <Link href="/simulation">
-            <button className="bg-primary text-primary-foreground px-6 py-2 rounded-full font-semibold shadow-lg hover:shadow-primary/25 hover:bg-primary/90 transition-all border border-primary/50">
-              Simulation
+            <button className="bg-primary text-white px-6 py-2 rounded-full font-bold shadow-lg hover:shadow-primary/25 hover:bg-primary/90 transition-all border border-primary/50 flex items-center gap-2">
+              <span className="text-xl">⚡</span> Track Live QPS Metrics
             </button>
           </Link>
         </div>
