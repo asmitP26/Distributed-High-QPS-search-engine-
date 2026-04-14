@@ -284,13 +284,20 @@ app.get('/api/simulation/stream', (req, res) => {
   ]);
 
   const handleData = (data) => {
-    const lines = data.toString().split('\n');
+    const text = data.toString();
+    const lines = text.split('\n');
     for (const line of lines) {
+      if (!line.trim()) continue;
+      
       // Matches: "HTTP/1.1 200     0.03 secs:"
       const match = line.match(/([\d.]+)\s*secs/);
       if (match) {
         const responseTime = Number.parseFloat(match[1]);
-        res.write(`data: ${JSON.stringify({ time: responseTime, timestamp: Date.now() })}\n\n`);
+        res.write(`data: ${JSON.stringify({ type: 'metric', time: responseTime, raw: line, timestamp: Date.now() })}\n\n`);
+        if (res.flush) res.flush();
+      } else {
+        // Send raw logs that aren't metrics
+        res.write(`data: ${JSON.stringify({ type: 'log', raw: line, timestamp: Date.now() })}\n\n`);
         if (res.flush) res.flush();
       }
     }
