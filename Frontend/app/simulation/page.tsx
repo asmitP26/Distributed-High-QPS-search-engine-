@@ -62,10 +62,15 @@ export default function SimulationPage() {
 
       if (parsed.type === 'qps') {
         setTotalHits((prev) => prev + parsed.hits);
+        
+        // Format time properly to ensure it always displays as HH:MM:SS
+        const dt = new Date(parsed.timestamp);
+        const timeString = `${dt.getHours().toString().padStart(2, '0')}:${dt.getMinutes().toString().padStart(2, '0')}:${dt.getSeconds().toString().padStart(2, '0')}`;
+        
         const newPoint: DataPoint = {
           time: parsed.qps,
           timestamp: parsed.timestamp,
-          displayTime: new Date(parsed.timestamp).toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' }),
+          displayTime: timeString,
         };
 
         setData((prevData) => {
@@ -76,10 +81,14 @@ export default function SimulationPage() {
       } else if (parsed.type === 'metric' || parsed.time !== undefined) {
         // Keep existing support for legacy format if any
         const timeValue = parsed.time !== undefined ? parsed.time : 0;
+        
+        const dt = new Date(parsed.timestamp);
+        const timeString = `${dt.getHours().toString().padStart(2, '0')}:${dt.getMinutes().toString().padStart(2, '0')}:${dt.getSeconds().toString().padStart(2, '0')}`;
+        
         const newPoint: DataPoint = {
           time: timeValue,
           timestamp: parsed.timestamp,
-          displayTime: new Date(parsed.timestamp).toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' }),
+          displayTime: timeString,
         };
 
         // For individual metrics, we just want to log them or handle differently, but here we don't spam the graph 
@@ -244,7 +253,7 @@ export default function SimulationPage() {
                     </td>
                   </tr>
                 ) : (
-                  [...data].reverse().map((point, idx) => (
+                  data.map((point, idx) => (
                     <tr key={idx} className="border-b border-white/5 hover:bg-muted/30 transition-colors">
                       <td className="px-6 py-3">{point.displayTime}</td>
                       <td className="px-6 py-3 font-medium text-primary">{point.time.toFixed(2)}</td>
