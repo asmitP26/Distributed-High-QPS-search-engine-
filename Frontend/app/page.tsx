@@ -28,10 +28,12 @@ export default function Home() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const searchMovies = useCallback(async () => {
     setLoading(true);
     setHasSearched(true);
+    setErrorMessage(null);
 
     try {
       const params = new URLSearchParams();
@@ -42,14 +44,25 @@ export default function Home() {
       if (contentType !== "All Types") params.append("contentType", contentType);
 
       const res = await fetch(`http://localhost:5000/search?${params.toString()}`);
-      if (!res.ok) throw new Error("Search failed");
+      if (!res.ok) {
+        const raw = await res.text().catch(() => "");
+        let details = raw;
+        try {
+          const parsed = raw ? JSON.parse(raw) : null;
+          details = parsed?.details || parsed?.error || raw;
+        } catch (_) {
+        }
+        throw new Error(details || `Search failed (HTTP ${res.status})`);
+      }
+
       const data = await res.json();
-      
       const moviesArray = Array.isArray(data) ? data : data.results || [];
       setMovies(moviesArray);
-    } catch (error) {
+    } catch (error: any) {
+      const msg = error?.message || "Search failed";
       console.error("Search error:", error);
-      
+      setErrorMessage(msg);
+
       const demoMovies = [
         { id: "1", title: ["The Shawshank Redemption"], rating: 9.3, release_year: 1994, genres: ["Drama"], title_type: "movie", votes: 2000000, runtime: 142 },
         { id: "2", title: ["The Dark Knight"], rating: 9.0, release_year: 2008, genres: ["Action"], title_type: "movie", votes: 2500000, runtime: 152 },
@@ -65,13 +78,10 @@ export default function Home() {
         { id: "12", title: ["Joker"], rating: 8.4, release_year: 2019, genres: ["Drama"], title_type: "movie", votes: 1200000, runtime: 122 },
       ];
 
-      
       let filtered = demoMovies;
       const qLower = query.trim().toLowerCase();
       if (qLower) {
-        filtered = filtered.filter((m) =>
-          m.title[0].toLowerCase().includes(qLower)
-        );
+        filtered = filtered.filter((m) => m.title[0].toLowerCase().includes(qLower));
       }
       if (genre !== "All Genres") {
         filtered = filtered.filter((m) => m.genres.includes(genre));
@@ -83,7 +93,7 @@ export default function Home() {
         filtered = filtered.filter((m) => m.release_year && m.release_year.toString() === year);
       }
       if (contentType !== "All Types") {
-         filtered = filtered.filter((m) => m.title_type && m.title_type.toLowerCase() === contentType.toLowerCase().replace(" ", ""));
+        filtered = filtered.filter((m) => m.title_type && m.title_type.toLowerCase() === contentType.toLowerCase().replace(" ", ""));
       }
       setMovies(filtered);
     } finally {
@@ -123,6 +133,13 @@ export default function Home() {
       <CinematicBackground />
       
       <div className="relative z-10 container mx-auto px-4 py-8">
+        {errorMessage && (
+          <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-3 text-sm text-red-200">
+            <div className="font-semibold">Search failed</div>
+            <div className="mt-1 opacity-90 wrap-break-word">{errorMessage}</div>
+          </div>
+        )}
+
         <div className="absolute top-4 -right-4 md:-right-8 z-50 flex gap-4">
           <Link href="/simulation">
             <button className="bg-primary text-white px-6 py-2 rounded-full font-bold shadow-lg hover:shadow-primary/25 hover:bg-primary/90 transition-all border border-primary/50 flex items-center gap-2">
@@ -135,7 +152,7 @@ export default function Home() {
         <header className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 flex items-center justify-center gap-3">
             <span className="text-3xl md:text-4xl lg:text-5xl">🎬</span>
-            <span className="bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text text-transparent pb-2 leading-tight">
+            <span className="bg-linear-to-r from-foreground via-foreground to-primary bg-clip-text text-transparent pb-2 leading-tight">
               Movie Search Engine
             </span>
           </h1>
