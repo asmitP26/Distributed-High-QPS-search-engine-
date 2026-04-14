@@ -69,7 +69,7 @@ export function FilterPanel({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Genre Filter */}
+        {}
         <div className="space-y-2">
           <label className="text-sm text-muted-foreground">Genre</label>
           <Select value={genre} onValueChange={onGenreChange}>
@@ -86,7 +86,7 @@ export function FilterPanel({
           </Select>
         </div>
 
-        {/* Rating Filter */}
+        {}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <label className="text-sm text-muted-foreground">Min Rating</label>
@@ -108,7 +108,7 @@ export function FilterPanel({
           </div>
         </div>
 
-        {/* Year Filter */}
+        {}
         <div className="space-y-2">
           <label className="text-sm text-muted-foreground">Year</label>
           <Select value={year} onValueChange={onYearChange}>
@@ -128,7 +128,7 @@ export function FilterPanel({
           </Select>
         </div>
 
-        {/* Content Type Filter */}
+        {}
         <div className="space-y-2">
           <label className="text-sm text-muted-foreground">Content Type</label>
           <Select value={contentType} onValueChange={onContentTypeChange}>

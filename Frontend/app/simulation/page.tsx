@@ -26,7 +26,7 @@ export default function SimulationPage() {
   const eventSourceRef = useRef<EventSource | null>(null);
   const logContainerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll logs
+  
   useEffect(() => {
     if (logContainerRef.current) {
       logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
@@ -39,7 +39,7 @@ export default function SimulationPage() {
     setData([]);
     setLogs([]);
 
-    // Open connection to backend streaming endpoint (use localhost to match cors)
+    
     const eventSource = new EventSource("http://localhost:5000/api/simulation/stream");
     eventSourceRef.current = eventSource;
 
@@ -54,7 +54,7 @@ export default function SimulationPage() {
       if (parsed.raw) {
         setLogs(prev => {
           const newLogs = [...prev, { raw: parsed.raw, timestamp: parsed.timestamp, id: Math.random().toString(36).substr(2, 9) }];
-          // Keep only the last 100 logs
+          
           if (newLogs.length > 100) return newLogs.slice(newLogs.length - 100);
           return newLogs;
         });
@@ -63,7 +63,7 @@ export default function SimulationPage() {
       if (parsed.type === 'qps') {
         setTotalHits((prev) => prev + parsed.hits);
         
-        // Format time properly to ensure it always displays as HH:MM:SS
+        
         const dt = new Date(parsed.timestamp);
         const timeString = `${dt.getHours().toString().padStart(2, '0')}:${dt.getMinutes().toString().padStart(2, '0')}:${dt.getSeconds().toString().padStart(2, '0')}`;
         
@@ -75,11 +75,11 @@ export default function SimulationPage() {
 
         setData((prevData) => {
           const updatedData = [...prevData, newPoint];
-          // Keep only data points from the last 60 seconds (60000 ms) to show a proper graph
+          
           return updatedData.filter((d) => (Date.now() - d.timestamp) <= 60000);
         });
       } else if (parsed.type === 'metric' || parsed.time !== undefined) {
-        // Keep existing support for legacy format if any
+        
         const timeValue = parsed.time !== undefined ? parsed.time : 0;
         
         const dt = new Date(parsed.timestamp);
@@ -90,9 +90,6 @@ export default function SimulationPage() {
           timestamp: parsed.timestamp,
           displayTime: timeString,
         };
-
-        // For individual metrics, we just want to log them or handle differently, but here we don't spam the graph 
-        // to avoid freezing the UI.
       }
     };
 
@@ -109,8 +106,8 @@ export default function SimulationPage() {
 
     eventSource.onerror = (err) => {
       console.error("EventSource failed:", err);
-      // Instead of stopping immediately on any error (which might just be a temporary connection drop),
-      // we check if the connection is permanently closed
+      
+      
       if (eventSource.readyState === EventSource.CLOSED) {
         stopSimulation();
       }
@@ -126,7 +123,7 @@ export default function SimulationPage() {
   };
 
   useEffect(() => {
-    // Add a ticking update so the graph slides even when there are no new points coming in instantly
+    
     const interval = setInterval(() => {
       if (isSimulating) {
         setData(prevData => prevData.filter((d) => (Date.now() - d.timestamp) <= 60000));
@@ -146,7 +143,7 @@ export default function SimulationPage() {
     };
   }, []);
 
-  // Calculate moving average
+  
   const last5SecData = data.filter(d => (Date.now() - d.timestamp) <= 5000);
   const avgQPS = last5SecData.length > 0 ? (last5SecData.reduce((acc, curr) => acc + curr.time, 0) / last5SecData.length).toFixed(1) : "0.0";
   

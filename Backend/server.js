@@ -7,7 +7,7 @@ require("dotenv").config();
 const app = express();
 app.use(cors());
 
-// ─── Node Registry ────────────────────────────────────────────────────────────
+
 const solrNodes = [
   { ip: process.env.SOLR_IP1 || "100.100.186.77",  name: "solr1 (w1)",     weight: 1, isMaster: false },
   { ip: process.env.SOLR_IP2 || "100.65.255.76",   name: "solr2 (w2)",     weight: 1, isMaster: false },
@@ -16,19 +16,19 @@ const solrNodes = [
 ].map(node => ({
   ...node,
   url: `http://${node.ip}:8983/solr/imdb/select`,
-  healthy: true,          // is the node currently alive?
-  activeConnections: 0,   // how many requests are in-flight right now?
-  totalRequests: 0,       // lifetime request count
-  totalErrors: 0,         // lifetime error count
-  lastChecked: null,      // last health-check timestamp
-  consecutiveFails: 0,    // how many health checks failed in a row
+  healthy: true,          
+  activeConnections: 0,   
+  totalRequests: 0,       
+  totalErrors: 0,         
+  lastChecked: null,      
+  consecutiveFails: 0,    
 }));
 
-// ─── Health Check Config ──────────────────────────────────────────────────────
-const HEALTH_CHECK_INTERVAL_MS = 15000;  // check every 15 seconds
-const HEALTH_CHECK_TIMEOUT_MS  = 3000;   // 3s timeout for health ping
-const MAX_CONSECUTIVE_FAILS    = 10;      // mark dead after 2 consecutive fails
-const RECOVERY_CHECK_MS        = 30000;  // re-check dead nodes every 30 seconds
+
+const HEALTH_CHECK_INTERVAL_MS = 15000;  
+const HEALTH_CHECK_TIMEOUT_MS  = 3000;   
+const MAX_CONSECUTIVE_FAILS    = 10;      
+const RECOVERY_CHECK_MS        = 30000;  
 
 async function checkNodeHealth(node) {
   try {
@@ -52,34 +52,34 @@ async function checkNodeHealth(node) {
   }
 }
 
-// Run health checks on all nodes
+
 async function runHealthChecks() {
   await Promise.all(solrNodes.map(checkNodeHealth));
 }
 
-// Start periodic health checks
-runHealthChecks(); // immediate first check on startup
+
+runHealthChecks(); 
 setInterval(runHealthChecks, HEALTH_CHECK_INTERVAL_MS);
 
-// ─── Load Balancer — Least Connections (health-aware) ─────────────────────────
-//
-//  Algorithm:
-//    1. Filter to only healthy nodes
-//    2. If NO healthy nodes → fallback to master node regardless
-//    3. Among healthy nodes pick the one with fewest active connections
-//    4. Ties broken by total lifetime requests (prefer less-used node)
-//
+
+
+
+
+
+
+
+
 function getBestNode() {
   const healthy = solrNodes.filter(n => n.healthy);
 
   if (healthy.length === 0) {
-    // Emergency fallback: try the master node even if marked unhealthy
+    
     const master = solrNodes.find(n => n.isMaster) || solrNodes[0];
     console.warn(`  All nodes unhealthy! Falling back to master: ${master.name}`);
     return master;
   }
 
-  // Least connections with weight factoring
+  
   return healthy.reduce((best, node) => {
     const nodeScore  = node.activeConnections  / node.weight;
     const bestScore  = best.activeConnections  / best.weight;
@@ -89,11 +89,11 @@ function getBestNode() {
   });
 }
 
-// ─── Execute Query with Retry ─────────────────────────────────────────────────
-//
-//  Tries the best node first. If it fails, marks it unhealthy and retries
-//  on the next best node — up to MAX_RETRIES times.
-//
+
+
+
+
+
 const MAX_RETRIES = 2;
 
 async function querySolr(params) {
@@ -107,9 +107,9 @@ async function querySolr(params) {
   console.log(` [Attempt ${attempt + 1}] Routing to: ${node.name} (${node.ip}) | active: ${node.activeConnections}`);
     
     try {
-      // Build proper QueryString that Solr understands since Axios array serializing is broken for Solr `fq` (produces `fq[]=...` instead of repeating `fq=...`)
+      
       const builtParams = new URLSearchParams();
-      // Iterate via URLSearchParams rather than object params because axios will url encode + escape everything correctly.
+      
       for (const [key, value] of Object.entries(params)) {
           if (key === 'fq' && Array.isArray(value)) {
               value.forEach(v => builtParams.append('fq', v));
@@ -120,7 +120,7 @@ async function querySolr(params) {
           }
       }
 
-      // Important: if fq was a single string, axios serializes correctly, but let's enforce multiple FQs.
+      
       if (params.fq && !Array.isArray(params.fq)) {
          builtParams.append('fq', params.fq);
       }
@@ -149,9 +149,9 @@ async function querySolr(params) {
   throw lastError;
 }
 
-// ─── Routes ───────────────────────────────────────────────────────────────────
 
-// Health check endpoint — shows live cluster status
+
+
 app.get("/cluster-status", (req, res) => {
   res.json({
     nodes: solrNodes.map(n => ({
@@ -172,12 +172,12 @@ app.get("/cluster-status", (req, res) => {
   });
 });
 
-// Test route
+
 app.get("/test", (req, res) => {
   res.json({ message: "Backend working " });
 });
 
-// Search API
+
 app.get("/search", async (req, res) => {
   const { q, genre, minRating, year, contentType } = req.query;
   const filterQuery = [];
@@ -216,7 +216,7 @@ app.get("/search", async (req, res) => {
     res.json({
       results:     data.response.docs,
       numFound:    data.response.numFound,
-      servedBy:    node,   // shows which node handled the request
+      servedBy:    node,   
     });
   } catch (error) {
     console.error(" SEARCH ERROR (all retries exhausted):", error.message);
@@ -227,7 +227,7 @@ app.get("/search", async (req, res) => {
   }
 });
 
-// Top Movies API
+
 app.get("/top", async (req, res) => {
   try {
     const { data, node } = await querySolr({
@@ -250,7 +250,7 @@ app.get("/top", async (req, res) => {
   }
 });
 
-// ─── Replace your entire /api/simulation/stream route with this ───────────────
+
 
 app.get('/api/simulation/stream', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
@@ -261,7 +261,7 @@ app.get('/api/simulation/stream', (req, res) => {
   const os   = require('os');
   const path = require('path');
 
-  // use __dirname to correctly refer to Backend/solr_urls.txt which is physically there
+  
   const urlsPath = path.join(__dirname, 'solr_urls.txt');
 
   res.write(`event: status\ndata: ${JSON.stringify({ status: 'started', timestamp: Date.now() })}\n\n`);
@@ -278,13 +278,13 @@ app.get('/api/simulation/stream', (req, res) => {
     } catch (_) {}
   };
 
-  // FIX 2: QPS aggregation — count hits inside 5-second windows, then emit
+  
   let hitCount    = 0;
   let windowStart = Date.now();
 
   const qpsInterval = setInterval(() => {
     const now     = Date.now();
-    const elapsed = (now - windowStart) / 1000;   // seconds elapsed in this window
+    const elapsed = (now - windowStart) / 1000;   
     const qps     = elapsed > 0 ? hitCount / elapsed : 0;
 
     try {
@@ -297,13 +297,13 @@ app.get('/api/simulation/stream', (req, res) => {
       if (res.flush) res.flush();
     } catch (_) {}
 
-    // reset window counters
+    
     hitCount    = 0;
     windowStart = now;
   }, 5000);
 
-  // FIX 3: mirror the exact command that works: -c 50 -d 0 (no delay!)
-  //   Without -d 0, siege adds random delays between requests, killing throughput
+  
+  
   const siegeProcess = spawn('bash', [
     '-c',
     `siege -c 50 -t 1M -d 0 -f "${urlsPath}" 2>&1`
@@ -312,11 +312,11 @@ app.get('/api/simulation/stream', (req, res) => {
   console.log(" URLs file:", urlsPath);
 
   siegeProcess.on('error', (err) => {
-    console.error(" SPAWN ERROR:", err); // already there but make sure
+    console.error(" SPAWN ERROR:", err); 
     sendError(err?.message || 'Failed to spawn siege');
   });
 
-  // 1. Create a buffer variable OUTSIDE the handleData function
+  
   let streamBuffer = '';
 
   const handleData = (data) => {
@@ -326,18 +326,18 @@ app.get('/api/simulation/stream', (req, res) => {
     // 3. Split the buffered text into lines
     const lines = streamBuffer.split('\n');
     
-    // 4. CRITICAL FIX: The last item in the array is usually an incomplete line 
-    //    (because it hasn't received its \n yet). Pop it off and save it in the buffer.
+    
+    
     streamBuffer = lines.pop();
 
     for (const line of lines) {
       if (!line.trim()) continue;
 
-      // FIX 4: old regex `/([\d.]+)\s*secs/` also matched siege's end-of-run summary stats.
-      // Real per-request lines look like:
-      //   HTTP/1.1 200     0.03 secs:   12345 bytes ==> GET  /solr/...
-      // Anchor to start of line so summary lines are ignored.
-      // Account for ANSI color codes that Siege uses (like \u001b[0;34m)
+      
+      
+      
+      
+      
       const cleanLine = line.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
       const match = cleanLine.match(/^HTTP\/[\d.]+\s+(\d+)\s+([\d.]+)\s+secs/);
       
@@ -358,7 +358,7 @@ app.get('/api/simulation/stream', (req, res) => {
           if (res.flush) res.flush();
         } catch (_) {}
       } else {
-        // raw log lines (siege banner, summary, errors)
+        
         try {
           res.write(`data: ${JSON.stringify({ type: 'log', raw: line, timestamp: Date.now() })}\n\n`);
           if (res.flush) res.flush();
@@ -380,7 +380,7 @@ app.get('/api/simulation/stream', (req, res) => {
     closed = true;
 
     clearInterval(heartbeatId);
-    clearInterval(qpsInterval);   // FIX 5: was missing — leaked interval on process exit
+    clearInterval(qpsInterval);   
 
     if (code && code !== 0) {
       console.log(`Siege exited non-zero (code=${code}, signal=${signal || 'none'})`);
@@ -396,7 +396,7 @@ app.get('/api/simulation/stream', (req, res) => {
     closed = true;
 
     clearInterval(heartbeatId);
-    clearInterval(qpsInterval);   // FIX 5: same here
+    clearInterval(qpsInterval);   
 
     try { siegeProcess.kill('SIGTERM'); } catch (_) {}
 
@@ -410,7 +410,7 @@ app.get('/api/simulation/stream', (req, res) => {
   });
 });
 
-// ─── Start Server ─────────────────────────────────────────────────────────────
+
 app.listen(5000, () => {
   console.log(" Backend running at http://localhost:5000");
   console.log(" Solr Nodes:");

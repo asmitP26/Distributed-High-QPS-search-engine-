@@ -26,8 +26,8 @@ export function SearchBar({ query, onQueryChange, onSearch }: SearchBarProps) {
           value={query}
           onChange={(e) => {
             onQueryChange(e.target.value);
-            // Optionally, handle typing to trigger search when length is a multiple of 4
-            // This logic is better placed in a higher component or debounce where searchMovies can be natively triggered, but we will let `useEffect` or `onQueryChange` handler in `page.tsx` manage the logic so we only update the query string here.
+            
+            
           }}
           placeholder="Search for movies..."
           className="w-full pl-12 pr-32 py-4 rounded-full glass text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-lg"

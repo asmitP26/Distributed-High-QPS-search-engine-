@@ -94,7 +94,7 @@
   }
 }
 
-/* Custom scrollbar for horizontal scroll */
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
@@ -104,7 +104,7 @@
   scrollbar-width: none;
 }
 
-/* Glassmorphism effect */
+
 .glass {
   background: rgba(20, 20, 35, 0.6);
   backdrop-filter: blur(16px);
@@ -112,7 +112,7 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Netflix-style card hover */
+
 .movie-card {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -124,7 +124,7 @@
               0 25px 50px -12px rgba(0, 0, 0, 0.8);
 }
 
-/* Fade animation */
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -140,7 +140,7 @@
   animation: fadeIn 0.5s ease-out forwards;
 }
 
-/* Staggered animation */
+
 .stagger-1 { animation-delay: 0.1s; }
 .stagger-2 { animation-delay: 0.2s; }
 .stagger-3 { animation-delay: 0.3s; }

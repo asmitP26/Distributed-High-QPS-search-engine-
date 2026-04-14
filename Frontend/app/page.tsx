@@ -49,7 +49,7 @@ export default function Home() {
       setMovies(moviesArray);
     } catch (error) {
       console.error("Search error:", error);
-      // Demo data for preview
+      
       const demoMovies = [
         { id: "1", title: ["The Shawshank Redemption"], rating: 9.3, release_year: 1994, genres: ["Drama"], title_type: "movie", votes: 2000000, runtime: 142 },
         { id: "2", title: ["The Dark Knight"], rating: 9.0, release_year: 2008, genres: ["Action"], title_type: "movie", votes: 2500000, runtime: 152 },
@@ -65,7 +65,7 @@ export default function Home() {
         { id: "12", title: ["Joker"], rating: 8.4, release_year: 2019, genres: ["Drama"], title_type: "movie", votes: 1200000, runtime: 122 },
       ];
 
-      // Filter demo movies based on criteria
+      
       let filtered = demoMovies;
       const qLower = query.trim().toLowerCase();
       if (qLower) {

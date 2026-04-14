@@ -30,12 +30,12 @@ export function TopMovies() {
         if (!res.ok) throw new Error("Failed to fetch top movies");
         const data = await res.json();
         
-        // Handle the case where the backend wraps the array in a `results` object
+        
         const moviesArray = Array.isArray(data) ? data : data.results || [];
         setMovies(moviesArray);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load movies");
-        // Demo data for preview
+        
         const topMovies: Movie[] = [
           { id: "1", title: ["The Shawshank Redemption"], rating: 9.3, release_year: 1994, genres: ["Drama"], title_type: "movie", votes: 2800000, runtime: 142 },
           { id: "10", title: ["The Godfather"], rating: 9.2, release_year: 1972, genres: ["Crime"], title_type: "movie", votes: 1900000, runtime: 175 },
@@ -75,7 +75,7 @@ export function TopMovies() {
         </div>
       ) : (
         <div className="relative group/scroll">
-          {/* Scroll Buttons */}
+          {}
           <Button
             variant="ghost"
             size="icon"
@@ -93,11 +93,11 @@ export function TopMovies() {
             <ChevronRight className="w-6 h-6" />
           </Button>
 
-          {/* Gradient Fades */}
+          {}
           <div className="absolute left-0 top-0 bottom-0 w-12 bg-linear-to-r from-background to-transparent z-10 pointer-events-none" />
           <div className="absolute right-0 top-0 bottom-0 w-12 bg-linear-to-l from-background to-transparent z-10 pointer-events-none" />
 
-          {/* Scrollable Container */}
+          {}
           <div
             ref={scrollRef}
             className="flex gap-4 overflow-x-auto scrollbar-hide py-4 px-2"
