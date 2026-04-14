@@ -183,3 +183,9 @@
 🧾 Solr request: http://100.65.255.76:8983/solr/imdb/select?q=*%3A*&sort=rating+desc&rows=20&wt=json
 🔀 [Attempt 1] Routing to: solr (main) (100.91.5.87) | active: 1
 🧾 Solr request: http://100.91.5.87:8983/solr/imdb/select?q=*%3A*&sort=rating+desc&rows=20&wt=json
+🚀 Siege spawned, PID: 120109
+📄 URLs file: /home/shresth/Desktop/Distributed-High-QPS-search-engine-/Backend/solr_urls.txt
+🔀 [Attempt 1] Routing to: solr2 (w2) (100.65.255.76) | active: 1
+🧾 Solr request: http://100.65.255.76:8983/solr/imdb/select?q=*%3A*&sort=rating+desc&rows=20&wt=json
+🔀 [Attempt 1] Routing to: solr (main) (100.91.5.87) | active: 1
+🧾 Solr request: http://100.91.5.87:8983/solr/imdb/select?q=*%3A*&sort=rating+desc&rows=20&wt=json

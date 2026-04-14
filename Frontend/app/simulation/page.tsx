@@ -231,7 +231,7 @@ export default function SimulationPage() {
           </div>
         </div>
 
-        {/* Data Table Section */}
+        {}
         <div className="mb-8 p-6 rounded-3xl border border-white/5 bg-card/60 backdrop-blur-xl shadow-2xl">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             <Activity className="w-5 h-5 text-primary" /> Data Points
@@ -266,7 +266,7 @@ export default function SimulationPage() {
           </div>
         </div>
 
-        {/* Logs Section */}
+        {}
         <div className="mb-8 p-6 rounded-3xl border border-white/5 bg-card/60 backdrop-blur-xl shadow-2xl">
           <h2 className="text-xl font-bold mb-4">Terminal Output</h2>
           <div 

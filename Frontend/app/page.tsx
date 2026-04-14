@@ -126,16 +126,16 @@ export default function Home() {
         <div className="absolute top-4 -right-4 md:-right-8 z-50 flex gap-4">
           <Link href="/simulation">
             <button className="bg-primary text-white px-6 py-2 rounded-full font-bold shadow-lg hover:shadow-primary/25 hover:bg-primary/90 transition-all border border-primary/50 flex items-center gap-2">
-              <span className="text-xl">⚡</span> Track Live QPS Metrics
+              <span className="text-xl"></span> Track Live QPS Metrics
             </button>
           </Link>
         </div>
 
-        {/* Header */}
+        {}
         <header className="text-center mb-12">
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-4">
-            <span className="text-3xl md:text-4xl lg:text-5xl mr-3">&#127916;</span>
-            <span className="bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 flex items-center justify-center gap-3">
+            <span className="text-3xl md:text-4xl lg:text-5xl">🎬</span>
+            <span className="bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text text-transparent pb-2 leading-tight">
               Movie Search Engine
             </span>
           </h1>
@@ -144,7 +144,7 @@ export default function Home() {
           </p>
         </header>
 
-        {/* Search Bar */}
+        {}
         <div className="mb-8">
           <SearchBar
             query={query}
@@ -153,7 +153,7 @@ export default function Home() {
           />
         </div>
 
-        {/* Filter Panel */}
+        {}
         <FilterPanel
           genre={genre}
           minRating={minRating}
@@ -165,17 +165,17 @@ export default function Home() {
           onContentTypeChange={setContentType}
         />
 
-        {/* Top Movies Section */}
+        {}
         {!hasSearched && <TopMovies />}
 
-        {/* Search Results */}
+        {}
         <MovieGrid
           movies={movies}
           loading={loading}
           hasSearched={hasSearched}
         />
 
-        {/* Footer */}
+        {}
         <footer className="mt-16 pb-8 text-center">
           <p className="text-sm text-muted-foreground">
             Built with Next.js & Tailwind CSS • College Project Demo

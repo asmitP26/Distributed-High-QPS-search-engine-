@@ -37,7 +37,7 @@ async function checkNodeHealth(node) {
       timeout: HEALTH_CHECK_TIMEOUT_MS,
     });
     if (!node.healthy) {
-      console.log(`✅ Node RECOVERED: ${node.name} (${node.ip})`);
+      console.log(` Node RECOVERED: ${node.name} (${node.ip})`);
     }
     node.healthy = true;
     node.consecutiveFails = 0;
@@ -47,7 +47,7 @@ async function checkNodeHealth(node) {
     node.lastChecked = new Date();
     if (node.consecutiveFails >= MAX_CONSECUTIVE_FAILS && node.healthy) {
       node.healthy = false;
-      console.warn(`❌ Node DEAD: ${node.name} (${node.ip}) — removed from rotation`);
+      console.warn(` Node DEAD: ${node.name} (${node.ip}) — removed from rotation`);
     }
   }
 }
@@ -75,7 +75,7 @@ function getBestNode() {
   if (healthy.length === 0) {
     // Emergency fallback: try the master node even if marked unhealthy
     const master = solrNodes.find(n => n.isMaster) || solrNodes[0];
-    console.warn(`⚠️  All nodes unhealthy! Falling back to master: ${master.name}`);
+    console.warn(`  All nodes unhealthy! Falling back to master: ${master.name}`);
     return master;
   }
 
@@ -104,7 +104,7 @@ async function querySolr(params) {
     node.activeConnections++;
     node.totalRequests++;
 
-  console.log(`🔀 [Attempt ${attempt + 1}] Routing to: ${node.name} (${node.ip}) | active: ${node.activeConnections}`);
+  console.log(` [Attempt ${attempt + 1}] Routing to: ${node.name} (${node.ip}) | active: ${node.activeConnections}`);
     
     try {
       // Build proper QueryString that Solr understands since Axios array serializing is broken for Solr `fq` (produces `fq[]=...` instead of repeating `fq=...`)
@@ -126,7 +126,7 @@ async function querySolr(params) {
       }
 
   const fullUrl = `${node.url}?${builtParams.toString()}`;
-  console.log(`🧾 Solr request: ${fullUrl}`);
+  console.log(` Solr request: ${fullUrl}`);
 
   const response = await axios.get(fullUrl, { timeout: 8000 });
       node.activeConnections--;
@@ -138,11 +138,11 @@ async function querySolr(params) {
 
       if (node.consecutiveFails >= MAX_CONSECUTIVE_FAILS) {
         node.healthy = false;
-        console.warn(`❌ Node failed during request: ${node.name} — marking unhealthy`);
+        console.warn(` Node failed during request: ${node.name} — marking unhealthy`);
       }
 
       lastError = err;
-      console.error(`⚠️  Request failed on ${node.name}: ${err.message}`);
+      console.error(`  Request failed on ${node.name}: ${err.message}`);
     }
   }
 
@@ -174,7 +174,7 @@ app.get("/cluster-status", (req, res) => {
 
 // Test route
 app.get("/test", (req, res) => {
-  res.json({ message: "Backend working ✅" });
+  res.json({ message: "Backend working " });
 });
 
 // Search API
@@ -219,7 +219,7 @@ app.get("/search", async (req, res) => {
       servedBy:    node,   // shows which node handled the request
     });
   } catch (error) {
-    console.error("❌ SEARCH ERROR (all retries exhausted):", error.message);
+    console.error(" SEARCH ERROR (all retries exhausted):", error.message);
     res.status(500).json({
       error:   "Search failed — all Solr nodes unavailable",
       details: error.message,
@@ -242,7 +242,7 @@ app.get("/top", async (req, res) => {
       servedBy: node,
     });
   } catch (error) {
-    console.error("❌ TOP ERROR (all retries exhausted):", error.message);
+    console.error(" TOP ERROR (all retries exhausted):", error.message);
     res.status(500).json({
       error:   "Top movies fetch failed — all Solr nodes unavailable",
       details: error.message,
@@ -308,11 +308,11 @@ app.get('/api/simulation/stream', (req, res) => {
     '-c',
     `siege -c 50 -t 1M -d 0 -f "${urlsPath}" 2>&1`
   ]);
-  console.log("🚀 Siege spawned, PID:", siegeProcess.pid);
-  console.log("📄 URLs file:", urlsPath);
+  console.log(" Siege spawned, PID:", siegeProcess.pid);
+  console.log(" URLs file:", urlsPath);
 
   siegeProcess.on('error', (err) => {
-    console.error("💥 SPAWN ERROR:", err); // already there but make sure
+    console.error(" SPAWN ERROR:", err); // already there but make sure
     sendError(err?.message || 'Failed to spawn siege');
   });
 
@@ -412,8 +412,8 @@ app.get('/api/simulation/stream', (req, res) => {
 
 // ─── Start Server ─────────────────────────────────────────────────────────────
 app.listen(5000, () => {
-  console.log("🚀 Backend running at http://localhost:5000");
-  console.log("🔗 Solr Nodes:");
+  console.log(" Backend running at http://localhost:5000");
+  console.log(" Solr Nodes:");
   solrNodes.forEach(n => console.log(`   • ${n.name}: ${n.ip}`));
-  console.log("🏥 Health checks every", HEALTH_CHECK_INTERVAL_MS / 1000, "seconds");
+  console.log(" Health checks every", HEALTH_CHECK_INTERVAL_MS / 1000, "seconds");
 });
