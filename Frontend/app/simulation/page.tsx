@@ -221,6 +221,66 @@ export default function SimulationPage() {
             </div>
           </div>
         </div>
+
+        {/* Data Table Section */}
+        <div className="mb-8 p-6 rounded-3xl border border-white/5 bg-card/60 backdrop-blur-xl shadow-2xl">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <Activity className="w-5 h-5 text-primary" /> Data Points
+          </h2>
+          <div className="overflow-x-auto rounded-xl border border-white/5 bg-background/50 max-h-64 overflow-y-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="text-xs uppercase bg-muted/50 text-muted-foreground sticky top-0 backdrop-blur-md">
+                <tr>
+                  <th scope="col" className="px-6 py-3">Time</th>
+                  <th scope="col" className="px-6 py-3">QPS</th>
+                  <th scope="col" className="px-6 py-3">Timestamp (ms)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-4 text-center text-muted-foreground">
+                      No data available yet
+                    </td>
+                  </tr>
+                ) : (
+                  [...data].reverse().map((point, idx) => (
+                    <tr key={idx} className="border-b border-white/5 hover:bg-muted/30 transition-colors">
+                      <td className="px-6 py-3">{point.displayTime}</td>
+                      <td className="px-6 py-3 font-medium text-primary">{point.time.toFixed(2)}</td>
+                      <td className="px-6 py-3 text-muted-foreground">{point.timestamp}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Logs Section */}
+        <div className="mb-8 p-6 rounded-3xl border border-white/5 bg-card/60 backdrop-blur-xl shadow-2xl">
+          <h2 className="text-xl font-bold mb-4">Terminal Output</h2>
+          <div 
+            ref={logContainerRef}
+            className="h-64 overflow-y-auto p-4 rounded-xl border border-white/5 bg-black/60 font-mono text-sm shadow-inner"
+          >
+            {logs.length === 0 ? (
+               <div className="text-muted-foreground italic h-full flex items-center justify-center">
+                 Waiting for simulation to start...
+               </div>
+            ) : (
+              logs.map((log) => (
+                <div key={log.id} className="mb-1 border-b border-white/10 pb-1 last:border-0 hover:bg-white/5 px-2 rounded break-all whitespace-pre-wrap">
+                  <span className="text-primary/70 mr-3 opacity-50">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
+                  <span className={`${log.raw.includes('ERROR') ? 'text-red-400' : 'text-green-400/90'}`}>
+                    {log.raw}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
       </div>
     </div>
   );
