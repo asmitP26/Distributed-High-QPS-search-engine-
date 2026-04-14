@@ -1,6 +1,7 @@
 const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
+const { spawn } = require('child_process');
 require("dotenv").config();
 
 const app = express();
@@ -195,18 +196,22 @@ app.get("/search", async (req, res) => {
      filterQuery.push(`title_type:"${solrType}"`);
   }
 
+  const solrParams = {
+    q: q ? q : "*:*",
+    fq: filterQuery.length > 0 ? filterQuery : undefined,
+    sort: "rating desc",
+    rows: 20,
+    wt: "json",
+  };
+
+  if (q) {
+    solrParams.defType = "edismax";
+    solrParams.qf = "title^2 title_type genres";
+    solrParams["q.op"] = "AND";
+  }
+
   try {
-    const { data, node } = await querySolr({
-  // Use a fielded query so Solr doesn't fall back to a default field that can ignore your intent.
-  // Also, don't use wildcard-leading queries (`*term*`) since they're slow; rely on Solr analysis.
-  q:    q ? `title:(${q}) OR title_type:(${q}) OR genres:(${q})` : "*:*",
-  "q.op": q ? "AND" : undefined,
-  // IMPORTANT: if there are no filters, omit fq completely.
-  fq:   filterQuery.length > 0 ? filterQuery : undefined,
-      sort: "rating desc",
-      rows: 20,
-      wt:   "json",
-    });
+    const { data, node } = await querySolr(solrParams);
 
     res.json({
       results:     data.response.docs,
@@ -243,6 +248,95 @@ app.get("/top", async (req, res) => {
       details: error.message,
     });
   }
+});
+
+app.get('/api/simulation/stream', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+
+  const path = require('path');
+  const urlsPath = path.join(__dirname, 'solr_urls.txt');
+
+  // Immediately tell client stream is alive (so UI doesn't sit at "Connecting...")
+  res.write(`event: status\ndata: ${JSON.stringify({ status: 'started', timestamp: Date.now() })}\n\n`);
+
+  // Heartbeat keeps SSE open even if no data arrives briefly
+  const heartbeatId = setInterval(() => {
+    res.write(': heartbeat\n\n');
+  }, 1000);
+
+  let closed = false;
+
+  const sendError = (message) => {
+    try {
+      res.write(`event: error\ndata: ${JSON.stringify({ message, timestamp: Date.now() })}\n\n`);
+    } catch (_) {}
+  };
+
+  // Spawn siege directly (no bash wrapper) so kill() works reliably on Stop
+  const siegeProcess = spawn('siege', [
+    '--verbose',
+    '--concurrent=10',
+    '--time=1M',
+    '--file=' + urlsPath,
+  ]);
+
+  const handleData = (data) => {
+    const lines = data.toString().split('\n');
+    for (const line of lines) {
+      // Matches: "HTTP/1.1 200     0.03 secs:"
+      const match = line.match(/([\d.]+)\s*secs/);
+      if (match) {
+        const responseTime = Number.parseFloat(match[1]);
+        res.write(`data: ${JSON.stringify({ time: responseTime, timestamp: Date.now() })}\n\n`);
+        if (res.flush) res.flush();
+      }
+    }
+  };
+
+  siegeProcess.stdout.on('data', handleData);
+  siegeProcess.stderr.on('data', handleData);
+
+  siegeProcess.on('error', (err) => {
+    console.error('Siege spawn error:', err);
+    sendError(err?.message || 'Failed to spawn siege');
+  });
+
+  siegeProcess.on('close', (code, signal) => {
+    if (closed) return;
+    closed = true;
+
+    clearInterval(heartbeatId);
+
+    if (code && code !== 0) {
+      console.log(`Siege exited non-zero (code=${code}, signal=${signal || 'none'})`);
+      sendError(`siege exited with code ${code}`);
+    }
+
+    // Tell UI the run finished
+    res.write(`data: ${JSON.stringify({ done: true, code, signal, timestamp: Date.now() })}\n\n`);
+    res.end();
+  });
+
+  req.on('close', () => {
+    if (closed) return;
+    closed = true;
+
+    clearInterval(heartbeatId);
+
+    // Ensure siege fully dies -> prevents "worked once then idle" due to leftover processes
+    try { siegeProcess.kill('SIGTERM'); } catch (_) {}
+
+    const killTimer = setTimeout(() => {
+      try { siegeProcess.kill('SIGKILL'); } catch (_) {}
+    }, 1500);
+
+    siegeProcess.once('close', () => clearTimeout(killTimer));
+
+    try { res.end(); } catch (_) {}
+  });
 });
 
 // ─── Start Server ─────────────────────────────────────────────────────────────
