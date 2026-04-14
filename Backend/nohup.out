@@ -110,3 +110,34 @@
 ❌ Node DEAD: solr1 (w1) (100.100.186.77) — removed from rotation
 ❌ Node DEAD: solr3 (master) (100.96.118.120) — removed from rotation
 ❌ Node DEAD: solr (main) (100.91.5.87) — removed from rotation
+🚀 Siege spawned, PID: 111658
+📄 URLs file: /home/shresth/Desktop/Distributed-High-QPS-search-engine-/Backend/solr_urls.txt
+🔀 [Attempt 1] Routing to: solr2 (w2) (100.65.255.76) | active: 1
+🧾 Solr request: http://100.65.255.76:8983/solr/imdb/select?q=*%3A*&sort=rating+desc&rows=20&wt=json
+🔀 [Attempt 1] Routing to: solr2 (w2) (100.65.255.76) | active: 1
+🧾 Solr request: http://100.65.255.76:8983/solr/imdb/select?q=*%3A*&sort=rating+desc&rows=20&wt=json
+🚀 Siege spawned, PID: 111949
+📄 URLs file: /home/shresth/Desktop/Distributed-High-QPS-search-engine-/Backend/solr_urls.txt
+🚀 Siege spawned, PID: 112084
+📄 URLs file: /home/shresth/Desktop/Distributed-High-QPS-search-engine-/Backend/solr_urls.txt
+🚀 Siege spawned, PID: 112712
+📄 URLs file: /home/shresth/Desktop/Distributed-High-QPS-search-engine-/Backend/solr_urls.txt
+❌ Node DEAD: solr2 (w2) (100.65.255.76) — removed from rotation
+🚀 Siege spawned, PID: 113129
+📄 URLs file: /home/shresth/Desktop/Distributed-High-QPS-search-engine-/Backend/solr_urls.txt
+🚀 Siege spawned, PID: 113201
+📄 URLs file: /home/shresth/Desktop/Distributed-High-QPS-search-engine-/Backend/solr_urls.txt
+✅ Node RECOVERED: solr (main) (100.91.5.87)
+✅ Node RECOVERED: solr1 (w1) (100.100.186.77)
+✅ Node RECOVERED: solr2 (w2) (100.65.255.76)
+🚀 Siege spawned, PID: 114233
+📄 URLs file: /home/shresth/Desktop/Distributed-High-QPS-search-engine-/Backend/solr_urls.txt
+🚀 Siege spawned, PID: 114387
+📄 URLs file: /home/shresth/Desktop/Distributed-High-QPS-search-engine-/Backend/solr_urls.txt
+🚀 Siege spawned, PID: 114447
+📄 URLs file: /home/shresth/Desktop/Distributed-High-QPS-search-engine-/Backend/solr_urls.txt
+🚀 Siege spawned, PID: 114563
+📄 URLs file: /home/shresth/Desktop/Distributed-High-QPS-search-engine-/Backend/solr_urls.txt
+🚀 Siege spawned, PID: 114693
+📄 URLs file: /home/shresth/Desktop/Distributed-High-QPS-search-engine-/Backend/solr_urls.txt
+❌ Node DEAD: solr1 (w1) (100.100.186.77) — removed from rotation
