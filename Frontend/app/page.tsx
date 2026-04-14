@@ -6,6 +6,7 @@ import { SearchBar } from "@/components/search-bar";
 import { FilterPanel } from "@/components/filter-panel";
 import { TopMovies } from "@/components/top-movies";
 import { MovieGrid } from "@/components/movie-grid";
+import Link from "next/link";
 
 interface Movie {
   id: string;
@@ -122,6 +123,14 @@ export default function Home() {
       <CinematicBackground />
       
       <div className="relative z-10 container mx-auto px-4 py-8">
+        <div className="absolute top-4 right-4 z-50">
+          <Link href="/simulation">
+            <button className="bg-primary text-primary-foreground px-6 py-2 rounded-full font-semibold shadow-lg hover:shadow-primary/25 hover:bg-primary/90 transition-all border border-primary/50">
+              Simulation
+            </button>
+          </Link>
+        </div>
+
         {/* Header */}
         <header className="text-center mb-12">
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-4">
