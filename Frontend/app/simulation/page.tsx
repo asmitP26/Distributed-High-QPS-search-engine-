@@ -21,6 +21,7 @@ interface LogEntry {
 export default function SimulationPage() {
   const [data, setData] = useState<DataPoint[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [totalHits, setTotalHits] = useState<number>(0);
   const [isSimulating, setIsSimulating] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
   const logContainerRef = useRef<HTMLDivElement>(null);
@@ -34,11 +35,12 @@ export default function SimulationPage() {
 
   const startSimulation = () => {
     setIsSimulating(true);
+    setTotalHits(0);
     setData([]);
     setLogs([]);
 
-    // Open connection to backend streaming endpoint (use 127.0.0.1 to avoid ipv6 resolution issues)
-    const eventSource = new EventSource("http://127.0.0.1:5000/api/simulation/stream");
+    // Open connection to backend streaming endpoint (use localhost to match cors)
+    const eventSource = new EventSource("http://localhost:5000/api/simulation/stream");
     eventSourceRef.current = eventSource;
 
     eventSource.onmessage = (event) => {
@@ -58,18 +60,30 @@ export default function SimulationPage() {
         });
       }
 
-      if (parsed.type === 'metric' || parsed.time !== undefined) {
+      if (parsed.type === 'qps') {
+        setTotalHits((prev) => prev + parsed.hits);
         const newPoint: DataPoint = {
-          time: parsed.time,
+          time: parsed.qps,
           timestamp: parsed.timestamp,
           displayTime: new Date(parsed.timestamp).toLocaleTimeString([], { hour12: false, second: '2-digit', fractionalSecondDigits: 1 }),
         };
 
         setData((prevData) => {
           const updatedData = [...prevData, newPoint];
-          // Keep only data points from the last 5 seconds (5000 ms)
-          return updatedData.filter((d) => (Date.now() - d.timestamp) <= 5000);
+          // Keep only data points from the last 60 seconds (60000 ms) to show a proper graph
+          return updatedData.filter((d) => (Date.now() - d.timestamp) <= 60000);
         });
+      } else if (parsed.type === 'metric' || parsed.time !== undefined) {
+        // Keep existing support for legacy format if any
+        const timeValue = parsed.time !== undefined ? parsed.time : 0;
+        const newPoint: DataPoint = {
+          time: timeValue,
+          timestamp: parsed.timestamp,
+          displayTime: new Date(parsed.timestamp).toLocaleTimeString([], { hour12: false, second: '2-digit', fractionalSecondDigits: 1 }),
+        };
+
+        // For individual metrics, we just want to log them or handle differently, but here we don't spam the graph 
+        // to avoid freezing the UI.
       }
     };
 
@@ -106,18 +120,25 @@ export default function SimulationPage() {
     // Add a ticking update so the graph slides even when there are no new points coming in instantly
     const interval = setInterval(() => {
       if (isSimulating) {
-        setData(prevData => prevData.filter((d) => (Date.now() - d.timestamp) <= 5000));
+        setData(prevData => prevData.filter((d) => (Date.now() - d.timestamp) <= 60000));
       }
-    }, 100);
+    }, 1000);
 
     return () => {
       clearInterval(interval);
-      stopSimulation(); // Cleanup on unmount
     };
   }, [isSimulating]);
 
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+    };
+  }, []);
+
   // Calculate moving average
-  const avgQPS = data.length > 0 ? (data.reduce((acc, curr) => acc + curr.time, 0) / data.length).toFixed(3) : "0.000";
+  const avgQPS = data.length > 0 ? (data.reduce((acc, curr) => acc + curr.time, 0) / data.length).toFixed(1) : "0.0";
 
   return (
     <div className="relative min-h-screen bg-background text-foreground p-8 overflow-hidden">
@@ -155,17 +176,17 @@ export default function SimulationPage() {
             </p>
           </div>
           <div className="p-6 rounded-2xl border border-white/5 bg-card/60 backdrop-blur-xl">
-            <p className="text-sm text-muted-foreground mb-1">Live Avg Response Time (last 5s)</p>
-            <p className="text-3xl font-bold tracking-tight text-primary">{avgQPS} <span className="text-lg text-muted-foreground font-normal">secs</span></p>
+            <p className="text-sm text-muted-foreground mb-1">Live Avg QPS (last 60s)</p>
+            <p className="text-3xl font-bold tracking-tight text-primary">{avgQPS} <span className="text-lg text-muted-foreground font-normal">q/s</span></p>
           </div>
           <div className="p-6 rounded-2xl border border-white/5 bg-card/60 backdrop-blur-xl">
             <p className="text-sm text-muted-foreground mb-1">Total Hits Recorded</p>
-            <p className="text-3xl font-bold tracking-tight">{data.length}</p>
+            <p className="text-3xl font-bold tracking-tight">{totalHits}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <div className="lg:col-span-2 p-6 rounded-3xl border border-white/5 bg-card/60 backdrop-blur-xl relative shadow-2xl overflow-hidden h-[500px]">
+          <div className="lg:col-span-2 p-6 rounded-3xl border border-white/5 bg-card/60 backdrop-blur-xl relative shadow-2xl overflow-hidden h-125">
             {!isSimulating && data.length === 0 && (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground/80 z-20 bg-background/90 backdrop-blur-2xl rounded-3xl">
                 <Activity className="w-16 h-16 text-muted-foreground/30 mb-4" />
@@ -178,10 +199,11 @@ export default function SimulationPage() {
                 <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted-foreground) / 0.2)" vertical={false} />
                   <XAxis dataKey="displayTime" stroke="hsl(var(--muted-foreground))" fontSize={12} tickMargin={10} minTickGap={30} />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickFormatter={(val) => `${val}s`} domain={['auto', 'auto']} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickFormatter={(val) => `${val}`} domain={['auto', 'auto']} />
                   <Tooltip 
                     contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '12px', color: 'hsl(var(--foreground))' }}
                     itemStyle={{ color: 'hsl(var(--primary))' }}
+                    formatter={(value: number) => [`${value} qps`, 'QPS']}
                   />
                   <Line 
                     type="monotone" 
@@ -198,15 +220,16 @@ export default function SimulationPage() {
             </div>
           </div>
 
-          <div className="lg:col-span-1 p-6 rounded-3xl border border-white/5 bg-card/60 backdrop-blur-xl relative shadow-2xl h-[500px] flex flex-col">
-            <h3 className="text-lg font-semibold mb-4 text-primary shrink-0 flex items-center justify-between">
-              <span>Terminal Output</span>
+          <div className="lg:col-span-1 p-6 rounded-3xl border border-white/5 bg-card/60 backdrop-blur-xl relative shadow-2xl h-125 flex flex-col">
+            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+              <Activity className="w-6 h-6 text-primary" />
+              Terminal Output
               {logs.length > 0 && (
                 <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full border border-primary/30">
                   Live
                 </span>
               )}
-            </h3>
+            </h2>
             <div className="flex-1 bg-black/50 border border-white/10 rounded-xl p-4 overflow-y-auto font-mono text-xs md:text-sm text-gray-300 relative custom-scrollbar space-y-1" ref={logContainerRef}>
               {!isSimulating && logs.length === 0 && (
                 <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/50">

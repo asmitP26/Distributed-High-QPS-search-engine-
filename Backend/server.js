@@ -27,7 +27,7 @@ const solrNodes = [
 // ─── Health Check Config ──────────────────────────────────────────────────────
 const HEALTH_CHECK_INTERVAL_MS = 15000;  // check every 15 seconds
 const HEALTH_CHECK_TIMEOUT_MS  = 3000;   // 3s timeout for health ping
-const MAX_CONSECUTIVE_FAILS    = 2;      // mark dead after 2 consecutive fails
+const MAX_CONSECUTIVE_FAILS    = 10;      // mark dead after 2 consecutive fails
 const RECOVERY_CHECK_MS        = 30000;  // re-check dead nodes every 30 seconds
 
 async function checkNodeHealth(node) {
@@ -250,19 +250,22 @@ app.get("/top", async (req, res) => {
   }
 });
 
+// ─── Replace your entire /api/simulation/stream route with this ───────────────
+
 app.get('/api/simulation/stream', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('Access-Control-Allow-Origin', '*');
 
+  const os   = require('os');
   const path = require('path');
+
+  // use __dirname to correctly refer to Backend/solr_urls.txt which is physically there
   const urlsPath = path.join(__dirname, 'solr_urls.txt');
 
-  // Immediately tell client stream is alive (so UI doesn't sit at "Connecting...")
   res.write(`event: status\ndata: ${JSON.stringify({ status: 'started', timestamp: Date.now() })}\n\n`);
 
-  // Heartbeat keeps SSE open even if no data arrives briefly
   const heartbeatId = setInterval(() => {
     res.write(': heartbeat\n\n');
   }, 1000);
@@ -275,30 +278,91 @@ app.get('/api/simulation/stream', (req, res) => {
     } catch (_) {}
   };
 
-  // Spawn siege directly (no bash wrapper) so kill() works reliably on Stop
-  const siegeProcess = spawn('siege', [
-    '--verbose',
-    '--concurrent=10',
-    '--time=1M',
-    '--file=' + urlsPath,
+  // FIX 2: QPS aggregation — count hits inside 5-second windows, then emit
+  let hitCount    = 0;
+  let windowStart = Date.now();
+
+  const qpsInterval = setInterval(() => {
+    const now     = Date.now();
+    const elapsed = (now - windowStart) / 1000;   // seconds elapsed in this window
+    const qps     = elapsed > 0 ? hitCount / elapsed : 0;
+
+    try {
+      res.write(`data: ${JSON.stringify({
+        type:      'qps',
+        qps:       Math.round(qps * 10) / 10,
+        hits:      hitCount,
+        timestamp: now,
+      })}\n\n`);
+      if (res.flush) res.flush();
+    } catch (_) {}
+
+    // reset window counters
+    hitCount    = 0;
+    windowStart = now;
+  }, 5000);
+
+  // FIX 3: mirror the exact command that works: -c 50 -d 0 (no delay!)
+  //   Without -d 0, siege adds random delays between requests, killing throughput
+  const siegeProcess = spawn('bash', [
+    '-c',
+    `siege -c 50 -t 1M -d 0 -f "${urlsPath}" 2>&1`
   ]);
+  console.log("🚀 Siege spawned, PID:", siegeProcess.pid);
+  console.log("📄 URLs file:", urlsPath);
+
+  siegeProcess.on('error', (err) => {
+    console.error("💥 SPAWN ERROR:", err); // already there but make sure
+    sendError(err?.message || 'Failed to spawn siege');
+  });
+
+  // 1. Create a buffer variable OUTSIDE the handleData function
+  let streamBuffer = '';
 
   const handleData = (data) => {
-    const text = data.toString();
-    const lines = text.split('\n');
+    // 2. Add the incoming data chunk to whatever was left over from the last chunk
+    streamBuffer += data.toString();
+    
+    // 3. Split the buffered text into lines
+    const lines = streamBuffer.split('\n');
+    
+    // 4. CRITICAL FIX: The last item in the array is usually an incomplete line 
+    //    (because it hasn't received its \n yet). Pop it off and save it in the buffer.
+    streamBuffer = lines.pop();
+
     for (const line of lines) {
       if (!line.trim()) continue;
+
+      // FIX 4: old regex `/([\d.]+)\s*secs/` also matched siege's end-of-run summary stats.
+      // Real per-request lines look like:
+      //   HTTP/1.1 200     0.03 secs:   12345 bytes ==> GET  /solr/...
+      // Anchor to start of line so summary lines are ignored.
+      // Account for ANSI color codes that Siege uses (like \u001b[0;34m)
+      const cleanLine = line.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
+      const match = cleanLine.match(/^HTTP\/[\d.]+\s+(\d+)\s+([\d.]+)\s+secs/);
       
-      // Matches: "HTTP/1.1 200     0.03 secs:"
-      const match = line.match(/([\d.]+)\s*secs/);
       if (match) {
-        const responseTime = Number.parseFloat(match[1]);
-        res.write(`data: ${JSON.stringify({ type: 'metric', time: responseTime, raw: line, timestamp: Date.now() })}\n\n`);
-        if (res.flush) res.flush();
+        hitCount++;                               // count every HTTP hit for QPS
+
+        const statusCode   = parseInt(match[1], 10);
+        const responseTime = parseFloat(match[2]);
+
+        try {
+          res.write(`data: ${JSON.stringify({
+            type:         'metric',
+            responseTime,
+            statusCode,
+            raw:          line,
+            timestamp:    Date.now(),
+          })}\n\n`);
+          if (res.flush) res.flush();
+        } catch (_) {}
       } else {
-        // Send raw logs that aren't metrics
-        res.write(`data: ${JSON.stringify({ type: 'log', raw: line, timestamp: Date.now() })}\n\n`);
-        if (res.flush) res.flush();
+        // raw log lines (siege banner, summary, errors)
+        try {
+          res.write(`data: ${JSON.stringify({ type: 'log', raw: line, timestamp: Date.now() })}\n\n`);
+          if (res.flush) res.flush();
+        } catch (_) {}
       }
     }
   };
@@ -316,13 +380,13 @@ app.get('/api/simulation/stream', (req, res) => {
     closed = true;
 
     clearInterval(heartbeatId);
+    clearInterval(qpsInterval);   // FIX 5: was missing — leaked interval on process exit
 
     if (code && code !== 0) {
       console.log(`Siege exited non-zero (code=${code}, signal=${signal || 'none'})`);
       sendError(`siege exited with code ${code}`);
     }
 
-    // Tell UI the run finished
     res.write(`data: ${JSON.stringify({ done: true, code, signal, timestamp: Date.now() })}\n\n`);
     res.end();
   });
@@ -332,8 +396,8 @@ app.get('/api/simulation/stream', (req, res) => {
     closed = true;
 
     clearInterval(heartbeatId);
+    clearInterval(qpsInterval);   // FIX 5: same here
 
-    // Ensure siege fully dies -> prevents "worked once then idle" due to leftover processes
     try { siegeProcess.kill('SIGTERM'); } catch (_) {}
 
     const killTimer = setTimeout(() => {

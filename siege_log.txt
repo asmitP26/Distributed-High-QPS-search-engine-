@@ -1,0 +1,21 @@
+** SIEGE 4.0.7
+** Preparing 1 concurrent users for battle.
+The server is now under siege...
+
+Lifting the server siege...
+Transactions:		           3 hits
+Availability:		      100.00 %
+Elapsed time:		        9.83 secs
+Data transferred:	        0.00 MB
+Response time:		        0.17 secs
+Transaction rate:	        0.31 trans/sec
+Throughput:		        0.00 MB/sec
+Concurrency:		        0.05
+Successful transactions:           3
+Failed transactions:	           0
+Longest transaction:	        0.26
+Shortest transaction:	        0.00
+ 
+[0;34mHTTP/1.1 200     0.26 secs:     649 bytes ==> GET  /solr/imdb/select?q=genres:Adult[0m
+[0;34mHTTP/1.1 200     0.24 secs:     734 bytes ==> GET  /solr/imdb/select?q=title:Batman[0m
+[0;34mHTTP/1.1 200     0.00 secs:     663 bytes ==> GET  /solr/imdb/select?q=title:Superman[0m
