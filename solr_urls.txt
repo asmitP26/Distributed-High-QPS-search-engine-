@@ -1,0 +1,8 @@
+http://solr:8983/solr/imdb/select?q=genres:Adult
+http://solr1:8983/solr/imdb/select?q=title:Batman
+http://solr2:8983/solr/imdb/select?q=title:Superman
+http://solr3:8983/solr/imdb/select?q=genres:Horror
+http://solr:8983/solr/imdb/select?q=title:Avengers
+http://solr1:8983/solr/imdb/select?q=genres:Comedy
+http://solr2:8983/solr/imdb/select?q=rating:[8+TO+10]
+http://solr3:8983/solr/imdb/select?q=title:Inception
